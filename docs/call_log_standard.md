@@ -7,14 +7,14 @@ Call records arrive in different layouts:
 
 Step 4 brings every source to one layout. All the call analyses then use the same definitions whatever the source; they are the definitions of the handbook's Chapter 3.
 
-## Dial file: `output/R##/call/dials_<source>_R##.dta`, one row per dial
+## Dial file: `CATI/Round##/call/<date>/l2phl_syn_<date>_dials_<source>.dta`, one row per dial
 
 | Variable | Type | Meaning |
 |---|---|---|
 | program | text | program code |
 | round | integer | round |
 | hhid | integer | household ID (the same in every round) |
-| enumerator | text | the program's own enumerator code (E01...), from `data/lookups/enumerators.csv` |
+| enumerator | text | the program's own enumerator code (E01...), from `CATI/ado/enumerators.csv` |
 | seq | integer | dial number for the household in the round, counted from the start times |
 | dial_start, dial_end | Stata datetime (local time) | when the dial started and ended; for form records, the end is when the form was saved |
 | dur_min | number | dial length in minutes (empty when the end is before the start) |
@@ -39,9 +39,9 @@ Step 4 brings every source to one layout. All the call analyses then use the sam
 | 9 | Does not know the household | X15 = 9 | DKH |
 | 10 | Reference person cannot connect | X15 = 10 | REF |
 
-To add a source, add a block to the CALL LOGS section of `do/3_L2PHL_SYN_CATI@R.do` that ends with `call_layout` (`ado/call_layout.ado`). Before that call, it must create every variable above except `dur_min` and `complete`, which the layout file makes. Keep the source's codes in a crosswalk at the top of that do-file, as `42_dials_from_callcentre.do` does.
+To add a source, add a block to the CALL LOGS section of `CATI/do/L2PHL_SYN_CATI@R.do` that ends with `call_layout` (`ado/call_layout.ado`). Before that call, it must create every variable above except `dur_min` and `complete`, which the layout file makes. Keep the source's codes in a crosswalk at the top of the block, as the call-centre block does.
 
-## Cases: `output/R##/call/cases_R##.dta`, one row per household and round
+## Cases: `CATI/Round##/call/<date>/l2phl_syn_<date>_cases.dta`, one row per household and round
 
 The CASES block of the CALL LOGS section applies the handbook's rules (Chapter 3):
 - **complete:** the first dial coded complete that lasted at least 3 minutes. If there is none, it is the first dial coded complete of any length.
@@ -58,9 +58,9 @@ The case file holds:
 
 When both sources exist, the call-centre log is used (`$CALLSOURCE`), because its durations measure the call itself.
 
-## Fieldwork tables: `output/analysis/call/calls_*.csv`
+## Fieldwork tables: `CATI/Analysis/call/calls_*.csv`
 
-The CALL INDICATORS section of `do/5_hf_l2phl_syn_analysis.do` writes the tables the dashboard draws:
+The CALL INDICATORS section of `CATI/Analysis/do/hf_l2phl_syn_analysis.do` writes the tables the dashboard draws:
 - by round;
 - by dial number;
 - by outcome;

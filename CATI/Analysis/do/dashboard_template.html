@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTM Dashboard</title>
+<!-- The page only draws what Stata wrote into dashboard_data.js (the DASHBOARD section of CATI/Analysis/do/hf_l2phl_syn_analysis.do); nothing is computed here. -->
+<style>
+:root {
+  color-scheme: light;
+  --page: #f5f4f1; --surface-1: #fcfcfb; --surface-2: #f0efec; --border: #dddcd6;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #77766f;
+  --grid: #e4e3de; --axis: #a3a29b;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4;
+  --warn: #fab219; --warn-ink: #7a5300; --good-ink: #0a6b0a;
+  --seq-100: #cde2fb; --seq-200: #9ec5f4; --seq-300: #6da7ec; --seq-400: #3987e5; --seq-500: #256abf; --seq-600: #184f95; --seq-700: #0d366b;
+  --flag-1: #fde6da; --flag-2: #f8bfa3; --flag-3: #ef8f62; --flag-4: #d95926; --flag-ink-hi: #ffffff; --flag-ink-lo: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #121211; --surface-1: #1a1a19; --surface-2: #262624; --border: #383835;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #9a998f;
+    --grid: #2e2e2b; --axis: #6a6963;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181;
+    --warn-ink: #fab219; --good-ink: #3fbf3f;
+    --flag-1: #3a2316; --flag-2: #6b3419; --flag-3: #a4431c; --flag-4: #d95926; --flag-ink-lo: #f0efec;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #121211; --surface-1: #1a1a19; --surface-2: #262624; --border: #383835;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #9a998f;
+  --grid: #2e2e2b; --axis: #6a6963;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181;
+  --warn-ink: #fab219; --good-ink: #3fbf3f;
+  --flag-1: #3a2316; --flag-2: #6b3419; --flag-3: #a4431c; --flag-4: #d95926; --flag-ink-lo: #f0efec;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text-primary); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { padding: 20px 16px 8px; max-width: 1180px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 2px; font-weight: 650; }
+.sub { color: var(--text-secondary); }
+.banner { margin: 12px 0 0; padding: 8px 12px; border: 1px solid var(--border); border-left: 4px solid var(--warn); background: var(--surface-1); border-radius: 6px; color: var(--text-secondary); }
+nav { max-width: 1180px; margin: 0 auto; padding: 8px 16px 0; display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+nav button { font: inherit; background: none; border: 0; padding: 8px 12px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+nav button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 600; }
+nav button .n { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--flag-4); color: #fff; font-size: 11px; font-weight: 600; }
+main { max-width: 1180px; margin: 0 auto; padding: 16px; }
+section[hidden] { display: none; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.card h3 { margin: 0 0 2px; font-size: 14px; font-weight: 600; }
+.card .note { color: var(--text-muted); font-size: 12px; margin: 0 0 8px; }
+.wide { grid-column: 1 / -1; }
+section > .card, section > .grid { margin-bottom: 16px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.kpi .v { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .l { color: var(--text-secondary); font-size: 12px; }
+.kpi .d { color: var(--text-muted); font-size: 12px; }
+.kpi.warnk .v { color: var(--warn-ink); }
+.kpi.goodk .v { color: var(--good-ink); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+th { color: var(--text-secondary); font-weight: 600; font-size: 12px; }
+tr.all td { font-weight: 600; background: var(--surface-2); }
+td.txt, th.txt { text-align: left; white-space: normal; max-width: 360px; }
+table.wrap th { white-space: normal; }
+.grid.panelrow { grid-template-columns: 2fr 1fr; }
+@media (max-width: 760px) { .grid.panelrow { grid-template-columns: 1fr; } }
+td.rule { text-align: left; white-space: normal; max-width: 300px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--text-secondary); }
+.scroll { overflow-x: auto; }
+.filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; border: 0; background: var(--surface-1); color: var(--text-secondary); padding: 5px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); }
+select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); }
+label.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--text-secondary); cursor: pointer; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin: 2px 0 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { fill: var(--text-secondary); font-size: 11px; }
+.tip { position: fixed; pointer-events: none; z-index: 10; background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: 12px; box-shadow: 0 2px 8px rgb(0 0 0 / 0.15); max-width: 320px; }
+.tip b { font-weight: 600; }
+.sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+.heat td.c { min-width: 64px; }
+.flag { color: var(--warn-ink); font-weight: 600; }
+.ok { color: var(--good-ink); }
+.muted { color: var(--text-muted); }
+.pill { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 11px; font-weight: 600; background: var(--surface-2); color: var(--text-secondary); }
+.pill.added { background: var(--seq-100); color: var(--seq-700); }
+.pill.dropped { background: var(--flag-1); color: #7a2e0e; }
+.pill.rot { background: var(--surface-2); }
+td.fl { border-radius: 3px; }
+td.fl1 { background: var(--flag-1); color: var(--flag-ink-lo); }
+td.fl2 { background: var(--flag-2); color: var(--flag-ink-lo); }
+td.fl3 { background: var(--flag-3); color: var(--flag-ink-hi); }
+td.fl4 { background: var(--flag-4); color: var(--flag-ink-hi); }
+td.out { background: var(--flag-1); color: var(--flag-ink-lo); font-weight: 600; }
+details summary { cursor: pointer; color: var(--text-secondary); font-size: 12px; margin-top: 6px; }
+.bar-in { display: inline-block; height: 8px; border-radius: 0 4px 4px 0; background: var(--series-1); vertical-align: 0; margin-left: 6px; }
+ul.plain { margin: 4px 0 0; padding-left: 18px; }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } .kpi .v { font-size: 22px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Real-time monitoring dashboard</h1>
+  <div class="sub" id="subtitle"></div>
+  <div class="banner">Synthetic data. These numbers show what the workflow produces from a made-up panel; they are not results of any survey.</div>
+</header>
+<nav role="tablist">
+  <button role="tab" data-tab="overview">Overview</button>
+  <button role="tab" data-tab="fieldwork">Fieldwork</button>
+  <button role="tab" data-tab="enumerators">Enumerators</button>
+  <button role="tab" data-tab="results">Results</button>
+  <button role="tab" data-tab="explorer">Module explorer</button>
+  <button role="tab" data-tab="quality">Quality checks</button>
+  <button role="tab" data-tab="sample">Sample and weights</button>
+</nav>
+<main>
+  <section id="sec-overview"></section>
+  <section id="sec-fieldwork" hidden></section>
+  <section id="sec-enumerators" hidden></section>
+  <section id="sec-results" hidden></section>
+  <section id="sec-explorer" hidden></section>
+  <section id="sec-quality" hidden></section>
+  <section id="sec-sample" hidden></section>
+</main>
+<div id="tip" class="tip" hidden></div>
+<script src="dashboard_data.js"></script>
+<script>
+(function () {
+  const D = window.DATA;
+  if (!D) { document.querySelector("main").textContent = "dashboard_data.js was not found next to this page. Run L2PHL_SYN_master.do."; return; }
+  const NS = "http://www.w3.org/2000/svg";
+  const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)"];
+  const rounds = D.meta.rounds.map(r => r.round);
+  const lastRound = rounds[rounds.length - 1];
+  const INFO = /rows read|largest \/ smallest|largest weight|design effect|share of census|raking passes|largest gap/;   // checks that report a value rather than find problems
+  const roundColor = r => SERIES[(rounds.indexOf(r)) % SERIES.length];
+  const pct = (x, d = 0) => x == null ? "<10" : (100 * x).toFixed(d) + "%";
+  const num = (x, d = 1) => x == null ? "<10" : Number(x).toFixed(d);
+  const fmtInt = x => x == null ? "–" : Math.round(x).toLocaleString("en-US");
+  const h = (tag, attrs = {}, parent, text) => {
+    const e = document.createElement(tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const s = (tag, attrs = {}, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  document.getElementById("subtitle").textContent =
+    `${D.meta.title} · rounds ${rounds.join(", ")} · generated ${D.meta.made}`;
+
+  // ---------- the audit's totals, used in several places
+  const AUDIT = D.audit || [];
+  const auditTotals = r => {
+    const rows = AUDIT.filter(x => x.round === r);
+    const sum = k => rows.reduce((a, x) => a + (x[k] || 0), 0);
+    return { routing: sum("routing_broken"), required: sum("required_missing"), range: sum("out_of_range"),
+      untranslated: rows.filter(x => /not translated/.test(x.status) && !/constraint/.test(x.status)).length, questions: rows.length };
+  };
+  const checksFound = r => D.checks.filter(x => x.n > 0 && !INFO.test(x.check) && (r == null || x.round === r)).length;
+
+  // ---------- tooltip
+  const tip = document.getElementById("tip");
+  function showTip(ev, html) {
+    tip.innerHTML = html; tip.hidden = false;
+    const x = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+    const y = Math.min(ev.clientY + 14, window.innerHeight - tip.offsetHeight - 8);
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  const hideTip = () => { tip.hidden = true; };
+  const hover = (el, html) => { el.addEventListener("mousemove", ev => showTip(ev, html())); el.addEventListener("mouseleave", hideTip); };
+
+  function card(parent, title, note, wide) {
+    const c = h("div", { class: "card" + (wide ? " wide" : "") }, parent);
+    h("h3", {}, c, title);
+    if (note) h("p", { class: "note" }, c, note);
+    return c;
+  }
+  function legend(parent, items) {
+    if (items.length < 2) return;
+    const l = h("div", { class: "legend" }, parent);
+    items.forEach(it => { const sp = h("span", {}, l); h("i", { style: `background:${it.color}` }, sp); sp.appendChild(document.createTextNode(it.name)); });
+  }
+  function niceScale(v, top) {
+    if (top) return { top, step: top / 4 };
+    if (!(v > 0)) return { top: 1, step: 0.25 };
+    const raw = v / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+    const step = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+    return { top: Math.ceil(v / step - 1e-9) * step, step };
+  }
+  function roundedBar(x, y, w, hgt, horizontal) {
+    const r = Math.min(4, (horizontal ? hgt : w) / 2, horizontal ? w : hgt);
+    if (hgt <= 0 || w <= 0) return "";
+    if (horizontal) return `M${x},${y}h${w - r}a${r},${r} 0 0 1 ${r},${r}v${hgt - 2 * r}a${r},${r} 0 0 1 ${-r},${r}h${-(w - r)}z`;
+    return `M${x},${y + hgt}v${-(hgt - r)}a${r},${r} 0 0 1 ${r},${-r}h${w - 2 * r}a${r},${r} 0 0 1 ${r},${r}v${hgt - r}z`;
+  }
+
+  // ---------- line chart: series [{name, color, pts:[{x, y, lo, hi}]}]
+  function lineChart(host, o) {
+    const W = 520, H = o.height || 230, m = { l: 44, r: o.series.length > 1 && o.series.length <= 4 ? 70 : 16, t: 10, b: 30 };
+    const xs = [...new Set(o.series.flatMap(sr => sr.pts.map(p => p.x)))].sort((a, b) => a - b);
+    const sc = niceScale(Math.max(...o.series.flatMap(sr => sr.pts.map(p => p.hi != null ? p.hi : p.y)).filter(v => v != null)), o.yMax);
+    const ymax = sc.top;
+    const X = v => m.l + (xs.length > 1 ? (v - xs[0]) / (xs[xs.length - 1] - xs[0]) : 0.5) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v / ymax) * (H - m.t - m.b);
+    legend(host, o.series.map(sr => ({ name: sr.name, color: sr.color })));
+    const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": o.label || "" }, host);
+    for (let v = 0; v <= ymax + 1e-9; v += sc.step) {
+      const y = Y(v);
+      s("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: v ? "var(--grid)" : "var(--axis)" }, svg);
+      s("text", { x: m.l - 6, y: y + 4, "text-anchor": "end" }, svg, o.yFmt(v));
+    }
+    const step = Math.ceil(xs.length / 9);
+    xs.forEach((v, i) => { if (i % step === 0 || i === xs.length - 1) s("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle" }, svg, o.xFmt ? o.xFmt(v) : v); });
+    if (o.xLabel) s("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle" }, svg, o.xLabel);
+    const ends = [];
+    o.series.forEach(sr => {
+      const pts = sr.pts.filter(p => p.y != null).sort((a, b) => a.x - b.x);
+      if (o.ci) pts.forEach(p => { if (p.lo != null) s("line", { x1: X(p.x), x2: X(p.x), y1: Y(p.lo), y2: Y(p.hi), stroke: sr.color, "stroke-width": 2, "stroke-linecap": "round", opacity: 0.55 }, svg); });
+      let d = "";
+      pts.forEach((p, i) => { const join = i && xs.indexOf(p.x) - xs.indexOf(pts[i - 1].x) === 1; d += (join ? "L" : "M") + X(p.x) + "," + Y(p.y); });
+      if (pts.length > 1) s("path", { d, fill: "none", stroke: sr.color, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+      if (o.markers || pts.length <= 12) pts.forEach(p => s("circle", { cx: X(p.x), cy: Y(p.y), r: 4, fill: sr.color, stroke: "var(--surface-1)", "stroke-width": 2 }, svg));
+      if (o.series.length > 1 && o.series.length <= 4 && pts.length) { const p = pts[pts.length - 1]; ends.push({ x: X(p.x) + 8, y: Y(p.y) + 4, t: sr.name }); }
+    });
+    ends.sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].y < 12) e.y = arr[i - 1].y + 12; s("text", { x: e.x, y: e.y, style: "fill:var(--text-primary)" }, svg, e.t); });
+    const cross = s("line", { y1: m.t, y2: H - m.b, stroke: "var(--axis)", "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
+    const hit = s("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", ev => {
+      const r = svg.getBoundingClientRect(), vx = (ev.clientX - r.left) * W / r.width;
+      let best = xs[0]; xs.forEach(v => { if (Math.abs(X(v) - vx) < Math.abs(X(best) - vx)) best = v; });
+      cross.setAttribute("x1", X(best)); cross.setAttribute("x2", X(best)); cross.setAttribute("visibility", "visible");
+      let html = `<b>${o.xName || ""} ${o.xFmt ? o.xFmt(best) : best}</b>`;
+      o.series.forEach(sr => { const p = sr.pts.find(q => q.x === best); if (p) html += `<br><span class="sw" style="background:${sr.color}"></span>${sr.name}: ${p.y == null ? "<10 cases" : o.yFmt(p.y, true)}${p.lo != null ? ` (${o.yFmt(p.lo, true)}–${o.yFmt(p.hi, true)})` : ""}`; });
+      showTip(ev, html);
+    });
+    hit.addEventListener("mouseleave", () => { cross.setAttribute("visibility", "hidden"); hideTip(); });
+  }
+
+  // ---------- grouped bar chart: cats [labels], series [{name, color, vals}]
+  function barChart(host, o) {
+    const horizontal = !!o.horizontal;
+    const n = o.cats.length, k = o.series.length;
+    const rowH = horizontal ? Math.max(18, 10 * k + 8) : 0;
+    const W = o.width || 520, H = horizontal ? 24 + n * rowH : (o.height || 220);
+    const m = horizontal ? { l: o.labelWidth || 170, r: 40, t: 4, b: 20 } : { l: 44, r: 8, t: 10, b: 30 };
+    const sc = niceScale(Math.max(...o.series.flatMap(sr => sr.vals).filter(v => v != null)), o.max);
+    const vmax = sc.top;
+    legend(host, o.series.map(sr => ({ name: sr.name, color: sr.color })));
+    const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": o.label || "" }, host);
+    const span = horizontal ? (W - m.l - m.r) : (H - m.t - m.b);
+    const V = v => (v / vmax) * span;
+    for (let v = 0; v <= vmax + 1e-9; v += sc.step) {
+      if (horizontal) { const x = m.l + V(v); s("line", { x1: x, x2: x, y1: m.t, y2: H - m.b, stroke: v ? "var(--grid)" : "var(--axis)" }, svg); s("text", { x, y: H - 4, "text-anchor": "middle" }, svg, o.fmt(v)); }
+      else { const y = H - m.b - V(v); s("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: v ? "var(--grid)" : "var(--axis)" }, svg); s("text", { x: m.l - 6, y: y + 4, "text-anchor": "end" }, svg, o.fmt(v)); }
+    }
+    const band = horizontal ? rowH : (W - m.l - m.r) / n;
+    const bw = Math.max(3, (band - 8) / k - 2);
+    o.cats.forEach((c, i) => {
+      if (horizontal) s("text", { x: m.l - 8, y: m.t + i * band + band / 2 + 4, "text-anchor": "end" }, svg, c);
+      else s("text", { x: m.l + i * band + band / 2, y: H - m.b + 16, "text-anchor": "middle" }, svg, c);
+      o.series.forEach((sr, j) => {
+        const v = sr.vals[i]; if (v == null) return;
+        const off = 4 + j * (bw + 2);
+        const d = horizontal ? roundedBar(m.l + 1, m.t + i * band + off, V(v), bw, true) : roundedBar(m.l + i * band + off, H - m.b - V(v), bw, V(v), false);
+        const p = s("path", { d, fill: sr.color }, svg);
+        hover(p, () => `<b>${c}</b><br><span class="sw" style="background:${sr.color}"></span>${sr.name}: ${o.fmt(v, true)}`);
+      });
+    });
+  }
+
+  // ---------- 100% stacked horizontal bars: rows [{name, parts:[values]}], cats [{name, color}]
+  function stackChart(host, o) {
+    const W = 520, rowH = 30, H = o.rows.length * rowH + 4, m = { l: 70, r: 4 };
+    legend(host, o.cats);
+    const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": o.label || "" }, host);
+    o.rows.forEach((row, i) => {
+      const tot = row.parts.reduce((a, b) => a + (b || 0), 0) || 1;
+      let x = m.l; const y = 4 + i * rowH;
+      s("text", { x: m.l - 8, y: y + 15, "text-anchor": "end" }, svg, row.name);
+      row.parts.forEach((v, j) => {
+        const w = (v || 0) / tot * (W - m.l - m.r);
+        if (w <= 0) return;
+        const r = s("rect", { x, y, width: Math.max(0, w - 2), height: 20, fill: o.cats[j].color }, svg);
+        hover(r, () => `<b>${row.name}</b><br><span class="sw" style="background:${o.cats[j].color}"></span>${o.cats[j].name}: ${fmtInt(v)} (${pct(v / tot, 1)}${o.unit ? " of " + o.unit : ""})`);
+        x += w;
+      });
+    });
+  }
+
+  function tableOf(parent, cols, rows, opts = {}) {
+    const wrap = h("div", { class: "scroll" }, parent), t = h("table", { class: opts.wrap ? "wrap" : "" }, wrap), tr = h("tr", {}, h("thead", {}, t));
+    const left = opts.left || [];
+    cols.forEach((c, j) => h("th", { class: left.includes(j) ? "txt" : "" }, tr, c));
+    const tb = h("tbody", {}, t);
+    rows.forEach((r, i) => {
+      const row = h("tr", {}, tb);
+      if (opts.rowClass) { const cl = opts.rowClass(i); if (cl) row.className = cl; }
+      r.forEach((v, j) => { const td = h("td", { class: left.includes(j) ? "txt" : "" }, row); if (v instanceof Node) td.appendChild(v); else td.textContent = v; });
+    });
+    return t;
+  }
+  const cell = (text, cls, title) => { const sp = document.createElement("span"); sp.textContent = text; if (cls) sp.className = cls; if (title) sp.title = title; return sp; };
+  const kpiBlock = (parent, v, l, d, cls) => { const e = h("div", { class: "kpi" + (cls ? " " + cls : "") }, parent); h("div", { class: "v" }, e, v); h("div", { class: "l" }, e, l); if (d) h("div", { class: "d" }, e, d); };
+
+  // ======================================================== Overview
+  (function () {
+    const sec = document.getElementById("sec-overview");
+    const br = D.by_round.slice().sort((a, b) => a.round - b.round);
+    const last = br[br.length - 1], prev = br[br.length - 2];
+    const k = h("div", { class: "kpis" }, sec);
+    kpiBlock(k, fmtInt(last.completes), `Households interviewed, round ${last.round}`, prev ? `${last.completes - prev.completes >= 0 ? "+" : ""}${last.completes - prev.completes} on round ${prev.round}` : "");
+    kpiBlock(k, pct(last.completion_rate), "Completion rate", `of ${fmtInt(last.cases)} households called`);
+    kpiBlock(k, num(last.dials_per_complete), "Dials per interview", `${fmtInt(last.dials)} dials in ${last.fieldwork_days} days`);
+    kpiBlock(k, pct(last.contact_rate), "Dials answered", "someone picked up");
+    kpiBlock(k, num(last.median_minutes, 0) + " min", "Median interview length", "the completing dial");
+    const at = auditTotals(lastRound), nf = at.routing + at.required + at.range;
+    kpiBlock(k, fmtInt(nf), `Form-logic flags, round ${lastRound}`, `${fmtInt(last.completes)} interviews audited`, nf ? "warnk" : "goodk");
+
+    const c = card(sec, "Fieldwork by round", "A case is a household called in a round. Round 1 called main households and, where one could not be interviewed, replacements from the same PSU; later rounds call the households interviewed in round 1.", true);
+    tableOf(c, ["Round", "Households called", "of which replacements", "Interviewed", "Completion rate", "Dials", "Dials per interview", "Dials answered", "Households refusing", "Numbers not working", "Calling days"],
+      br.map(r => [r.round, fmtInt(r.cases), fmtInt(r.replacements), fmtInt(r.completes), pct(r.completion_rate, 1), fmtInt(r.dials), num(r.dials_per_complete, 2), pct(r.contact_rate, 1), pct(r.refusal_rate, 1), pct(r.dead_number_rate, 1), r.fieldwork_days]));
+
+    if (D.panel) {
+      const g = h("div", { class: "grid panelrow" }, sec);
+      const cp = card(g, "Panel balance", "What became of each household called, by round, and how many of the round-1 panel have been interviewed in every round so far.");
+      const states = [["st_interviewed", "Interviewed"], ["st_other", "Reached, not finished"], ["st_refused", "Refused"], ["st_never_answered", "Never answered"], ["st_dead", "Number not working"]];
+      const cats = states.map((st, i) => ({ name: st[1], color: SERIES[i] }));
+      stackChart(cp, { rows: D.panel.map(p => ({ name: `Round ${p.round}`, parts: states.map(st => p[st[0]]) })), cats, unit: "households called", label: "Households by outcome and round" });
+      tableOf(cp, ["Round", "Called", "Interviewed", "In every round so far"], D.panel.map(p => [p.round, fmtInt(p.called), fmtInt(p.st_interviewed), `${fmtInt(p.all_so_far)} (${pct(p.all_so_far / D.panel[0].st_interviewed, 0)} of round 1)`]));
+      const cq = card(g, "Quality at a glance", `Round ${lastRound}. The Quality checks tab has every flag, the rule behind it and the review lists.`);
+      const ul = h("ul", { class: "plain" }, cq);
+      const li = (t, cls) => { const e = h("li", {}, ul); const sp = h("span", { class: cls || "" }, e, t); return sp; };
+      li(`${fmtInt(at.routing)} answers recorded where the form's routing says the question was not asked`, at.routing ? "flag" : "");
+      li(`${fmtInt(at.required)} required answers missing where the question was asked`, at.required ? "flag" : "");
+      li(`${fmtInt(at.range)} answers outside the form's constraints`, at.range ? "flag" : "");
+      li(`${fmtInt(at.untranslated)} of ${fmtInt(at.questions)} questions have a routing rule the audit could not read`, at.untranslated ? "muted" : "");
+      li(`${fmtInt(checksFound(lastRound))} processing checks found something this round`, checksFound(lastRound) ? "flag" : "");
+      const rv = (D.reviews || []).filter(x => x.file.startsWith(`R${String(lastRound).padStart(2, "0")}`));
+      li(`${rv.length} review list${rv.length === 1 ? "" : "s"} to read before the round is closed (${fmtInt(rv.reduce((a, x) => a + x.rows, 0))} rows)`, rv.length ? "flag" : "");
+    }
+  })();
+
+  // ======================================================== Fieldwork
+  (function () {
+    const sec = document.getElementById("sec-fieldwork");
+    const g = h("div", { class: "grid" }, sec);
+    let c = card(g, "Interviews by calling day", "Cumulative interviews completed, by day of fieldwork (days with at least one dial).");
+    lineChart(c, { series: rounds.map(r => ({ name: `Round ${r}`, color: roundColor(r), pts: D.by_day.filter(x => x.round === r).map(x => ({ x: x.fieldday, y: x.cum_completes })) })),
+      yFmt: v => fmtInt(v), xLabel: "calling day", xName: "Day", label: "Cumulative interviews by calling day" });
+    c = card(g, "Households interviewed by dial number", "Share of the households called that were interviewed by their 1st, 2nd, ... dial.");
+    lineChart(c, { series: rounds.map(r => ({ name: `Round ${r}`, color: roundColor(r), pts: D.by_dialno.filter(x => x.round === r).map(x => ({ x: x.dial, y: x.share_completed })) })),
+      yFmt: (v, t) => pct(v, t ? 1 : 0), yMax: 1, xLabel: "dial number", xName: "Dial", markers: true, label: "Share interviewed by dial number" });
+    const groups = [{ name: "Interview", codes: [1, 2] }, { name: "Callback", codes: [3, 4] }, { name: "Refused", codes: [5] }, { name: "No answer or off", codes: [6, 8] }, { name: "Number or household wrong", codes: [7, 9, 10] }];
+    const cats = groups.map((gr, i) => ({ name: gr.name, color: SERIES[i] }));
+    c = card(g, "What happened on each dial", "Share of dials by result, grouped from the ten result codes.");
+    stackChart(c, { rows: rounds.map(r => ({ name: `Round ${r}`, parts: groups.map(gr => D.outcomes.filter(x => x.round === r && gr.codes.includes(x.outcome)).reduce((a, b) => a + b.dials, 0)) })), cats, unit: "dials", label: "Dial results by round" });
+    const det = h("details", {}, c); h("summary", {}, det, "Show as table (all ten result codes)");
+    tableOf(det, ["Result", ...rounds.map(r => `Round ${r}`)], [...new Set(D.outcomes.map(x => x.outcome))].sort((a, b) => a - b).map(code => {
+      const lab = D.outcomes.find(x => x.outcome === code).outcome_label;
+      return [lab, ...rounds.map(r => { const x = D.outcomes.find(q => q.round === r && q.outcome === code); return x ? `${fmtInt(x.dials)} (${pct(x.share, 1)})` : "–"; })];
+    }));
+    c = card(g, "Best hours to call", "All rounds: share of dials answered, and share ending in an interview, by the hour the dial started.");
+    lineChart(c, { series: [{ name: "Answered", color: SERIES[0], pts: D.by_hour.map(x => ({ x: x.hour, y: x.contact_rate })) }, { name: "Interview", color: SERIES[1], pts: D.by_hour.map(x => ({ x: x.hour, y: x.complete_rate })) }],
+      yFmt: (v, t) => pct(v, t ? 1 : 0), yMax: 1, xFmt: v => v + ":00", xName: "", markers: true, label: "Answer and interview rates by hour" });
+    c = card(g, "Days of the week", "All rounds: share of dials answered, and share ending in an interview.");
+    barChart(c, { cats: D.by_weekday.map(x => x.day_label), series: [{ name: "Answered", color: SERIES[0], vals: D.by_weekday.map(x => x.contact_rate) }, { name: "Interview", color: SERIES[1], vals: D.by_weekday.map(x => x.complete_rate) }],
+      fmt: (v, t) => pct(v, t ? 1 : 0), max: 1, label: "Answer and interview rates by weekday" });
+  })();
+
+  // ======================================================== Enumerators (the monitoring view, handbook 3.2)
+  (function () {
+    const sec = document.getElementById("sec-enumerators");
+    if (!D.monitor) return;
+    const c = card(sec, "Enumerator monitoring view", "Each enumerator's indicators side by side, against the round's pooled value (All). A cell is marked when it is more than 50% above, or a third below, the pooled value, which is a prompt to look, not a verdict: caseloads differ by region and by the households each enumerator was given. Values from fewer than 10 interviews are left empty.", true);
+    const f = h("div", { class: "filters" }, c); h("span", { class: "muted" }, f, "Round");
+    const sel = h("select", { "aria-label": "Round" }, f); rounds.forEach(r => h("option", { value: r }, sel, `Round ${r}`)); sel.value = lastRound;
+    const holder = h("div", {}, c);
+    const COLS = [
+      ["completes", "Interviews", v => fmtInt(v), null],
+      ["dials_per_complete", "Dials per interview", v => num(v, 2), "hi"],
+      ["completes_per_day", "Interviews per operator-day", v => num(v, 1), "lo"],
+      ["refusal_rate", "Cases refused", v => pct(v, 1), "hi"],
+      ["median_minutes", "Median length (min)", v => num(v, 0), "both"],
+      ["short_share", "Short interviews (< 60% of median)", v => pct(v, 1), "hi"],
+      ["dk_share", "Don't know / refused answers", v => pct(v, 1), "hi"],
+      ["flags_per_100", "Form flags per 100 interviews", v => num(v, 1), "hi"],
+      ["shock_share", "Reported a shock", v => pct(v, 0), "both"],
+      ["fies4_share", "Food insecure (4+ of 8)", v => pct(v, 0), "both"],
+    ];
+    function draw() {
+      holder.innerHTML = "";
+      const rr = D.monitor.filter(x => x.round === +sel.value);
+      const all = rr.find(x => x.enumerator === "All");
+      const rows = [all, ...rr.filter(x => x.enumerator !== "All").sort((a, b) => a.enumerator.localeCompare(b.enumerator))].filter(Boolean);
+      const t = tableOf(holder, ["Enumerator", ...COLS.map(cl => cl[1])], rows.map(x => [x.enumerator, ...COLS.map(cl => {
+        const v = x[cl[0]], ref = all ? all[cl[0]] : null;
+        let out = false;
+        if (cl[3] && v != null && ref != null && x !== all) {
+          const hi = v > 1.5 * ref + 1e-9, lo = v < ref / 1.5 - 1e-9;
+          out = cl[3] === "hi" ? hi : cl[3] === "lo" ? lo : (hi || lo);
+          if (cl[0] === "refusal_rate" || cl[0] === "short_share" || cl[0] === "dk_share") out = out && v - ref > 0.02;   // tiny shares are noise
+        }
+        return cell(cl[2](v), out ? "flag" : "", out ? `pooled value ${cl[2](ref)}` : "");
+      })]), { rowClass: i => i === 0 ? "all" : "", wrap: true });
+      t.querySelectorAll("tbody tr").forEach(tr => [...tr.children].forEach(td => { if (td.firstChild && td.firstChild.className === "flag") td.classList.add("out"); }));
+    }
+    sel.addEventListener("change", draw); draw();
+    const c2 = card(sec, "How to read it", null, true);
+    const ul = h("ul", { class: "plain" }, c2);
+    ["Dials per interview and interviews per operator-day are pace; refusals and short interviews are how calls go; don't-know and refused answers, and the two answer shares, are what the enumerator adds to the answers (Section 3.2.1).",
+     "Form flags come from the skip-logic audit (Quality checks tab): answers that break the form's routing, required answers missing, values outside constraints, summed over the enumerator's interviews.",
+     "A marked cell asks for a look at the enumerator's recordings or a callback to a few households, not for a conclusion: with ten to twenty enumerators, one round's figures are noisy (Section 3.2.3)."].forEach(t => h("li", {}, ul, t));
+  })();
+
+  // ======================================================== Results
+  (function () {
+    const sec = document.getElementById("sec-results");
+    const f = h("div", { class: "filters" }, sec); h("span", { class: "muted" }, f, "Households");
+    const seg = h("div", { class: "seg", role: "group", "aria-label": "Group" }, f);
+    const groups = [["all", "All"], ["urban", "Urban"], ["rural", "Rural"]];
+    let group = "all";
+    groups.forEach(([k, l]) => { const b = h("button", { "aria-pressed": k === group }, seg, l); b.addEventListener("click", () => { group = k; seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(); }); });
+    h("span", { class: "muted" }, f, "Weighted, with 95% confidence intervals.");
+    const holder = h("div", {}, sec);
+    function draw() {
+      holder.innerHTML = "";
+      const g = h("div", { class: "grid" }, holder);
+      const keys = [...new Set(D.indicators.map(x => x.indicator))];
+      keys.forEach(k => {
+        const rows = D.indicators.filter(x => x.indicator === k && x.group === group);
+        const c = card(g, rows.length ? rows[0].label : k, null);
+        const asked = rows.map(x => x.round);
+        const missing = rounds.filter(r => !asked.includes(r));
+        const latest = rows.filter(x => x.est != null).slice(-1)[0];
+        h("p", { class: "note" }, c, (latest ? `Round ${latest.round}: ${pct(latest.est, 1)} (n = ${fmtInt(latest.n)})` : "") + (missing.length ? ` · not asked in round ${missing.join(", ")}` : ""));
+        lineChart(c, { series: [{ name: "Estimate", color: SERIES[0], pts: rounds.map(r => { const x = rows.find(q => q.round === r); return { x: r, y: x ? x.est : null, lo: x ? x.lb : null, hi: x ? x.ub : null }; }) }],
+          ci: true, markers: true, height: 170, yFmt: (v, t) => pct(v, t ? 1 : 0), xFmt: v => "R" + v, xName: "Round", label: rows.length ? rows[0].label : k });
+      });
+      const c = card(g, "Types of shock", "Share of households reporting each type in the past 30 days (all households); the eight most reported.", true);
+      const byCode = {}; D.shock_types.forEach(x => { (byCode[x.code] = byCode[x.code] || { label: x.label, vals: {} }).vals[x.round] = x.share; });
+      const top = Object.values(byCode).sort((a, b) => Math.max(...Object.values(b.vals)) - Math.max(...Object.values(a.vals))).slice(0, 8);
+      barChart(c, { horizontal: true, width: 1000, labelWidth: 300, cats: top.map(t => t.label.length > 48 ? t.label.slice(0, 46) + "…" : t.label), series: rounds.map(r => ({ name: `Round ${r}`, color: roundColor(r), vals: top.map(t => t.vals[r] ?? null) })), fmt: (v, t) => pct(v, t ? 1 : 0), label: "Shock types by round" });
+    }
+    draw();
+  })();
+
+  // ======================================================== Module explorer
+  (function () {
+    const sec = document.getElementById("sec-explorer");
+    const f = h("div", { class: "filters" }, sec); h("span", { class: "muted" }, f, "Module file");
+    const mods = [...new Set(D.explorer.map(x => x.module))];
+    const sel = h("select", { "aria-label": "Module" }, f); mods.forEach(m => h("option", { value: m }, sel, m.replace("_", " ")));
+    h("span", { class: "muted" }, f, "Weighted percent of households (members, for person-level modules) in each answer; <10 = fewer than 10 respondents.");
+    const holder = h("div", { class: "grid" }, sec);
+    const ramp = ["--seq-100", "--seq-200", "--seq-300", "--seq-400", "--seq-500", "--seq-600", "--seq-700"];
+    function draw() {
+      holder.innerHTML = "";
+      const rows = D.explorer.filter(x => x.module === sel.value);
+      [...new Set(rows.map(x => x.var))].forEach(v => {
+        const rv = rows.filter(x => x.var === v);
+        if (rv.every(x => x.pct == null)) return;
+        const c = card(holder, rv[0].varlabel || v, v);
+        const rs = rounds.filter(r => rv.some(x => x.round === r));
+        const codes = [...new Set(rv.map(x => x.code))].sort((a, b) => a - b);
+        const t = tableOf(c, ["Answer", ...rs.map(r => `R${r}`)], codes.map(code => {
+          const lab = rv.find(x => x.code === code).catlabel;
+          return [lab, ...rs.map(r => { const x = rv.find(q => q.round === r && q.code === code); return x ? (x.pct == null ? "<10" : x.pct.toFixed(1)) : "–"; })];
+        }));
+        t.classList.add("heat");
+        t.querySelectorAll("tbody tr").forEach((tr, i) => [...tr.children].slice(1).forEach((td, j) => {
+          td.classList.add("c");
+          const x = rv.find(q => q.round === rs[j] && q.code === codes[i]);
+          if (!x || x.pct == null) return;
+          const step = Math.min(6, Math.floor(x.pct / 100 * 7));
+          td.style.background = `var(${ramp[step]})`;
+          td.style.color = step >= 4 ? "#ffffff" : "#0b0b0b";
+        }));
+      });
+    }
+    sel.addEventListener("change", draw); draw();
+  })();
+
+  // ======================================================== Quality checks (handbook 4.3.2)
+  (function () {
+    const sec = document.getElementById("sec-quality");
+    const at = auditTotals(lastRound);
+    const k = h("div", { class: "kpis" }, sec);
+    kpiBlock(k, fmtInt(at.routing), "Routing broken", `round ${lastRound}: answered where not asked`, at.routing ? "warnk" : "goodk");
+    kpiBlock(k, fmtInt(at.required), "Required missing", "empty where asked", at.required ? "warnk" : "goodk");
+    kpiBlock(k, fmtInt(at.range), "Out of range", "fails the form's constraint", at.range ? "warnk" : "goodk");
+    kpiBlock(k, fmtInt(at.untranslated), "Rules not read", `of ${fmtInt(at.questions)} questions`, at.untranslated ? "warnk" : "goodk");
+    kpiBlock(k, fmtInt(checksFound(lastRound)), "Processing checks found something", `of ${D.checks.filter(x => x.round === lastRound && !INFO.test(x.check)).length} this round`, checksFound(lastRound) ? "warnk" : "goodk");
+    const revs = (D.reviews || []).filter(x => x.file.startsWith(`R${String(lastRound).padStart(2, "0")}`));
+    kpiBlock(k, fmtInt(revs.length), "Review lists", `round ${lastRound}: ${fmtInt(revs.reduce((a, x) => a + x.rows, 0))} rows for a person to read`, revs.length ? "warnk" : "goodk");
+
+    // ---- skip-logic audit
+    if (AUDIT.length) {
+      const c = card(sec, "Skip-logic audit: does each question's base match who should have been asked?", "The audit reads every question's routing, required flag and constraint from the form itself. Asked = submissions where the routing says the question applied; flags = answers where it did not apply + required answers missing + answers outside the constraint. Call-record questions are audited on every call attempt, the rest on completed interviews. Hover a cell for the counts; the routing column shows the rule as written in the form.", true);
+      const f = h("div", { class: "filters" }, c);
+      h("span", { class: "muted" }, f, "Sheet");
+      const sheets = [...new Set(AUDIT.map(x => x.sheet))];
+      const sel = h("select", { "aria-label": "Sheet" }, f); h("option", { value: "" }, sel, "All sheets"); sheets.forEach(sh => h("option", { value: sh }, sel, sh === "main" ? "main (one row per call attempt)" : sh + " (repeat)"));
+      const lab = h("label", { class: "chk" }, f); const only = h("input", { type: "checkbox" }, lab); only.checked = true; lab.appendChild(document.createTextNode("only questions with a flag or an unread rule"));
+      const holder = h("div", {}, c);
+      const level = n => n <= 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 20 ? 3 : 4;
+      function draw() {
+        holder.innerHTML = "";
+        let rows = AUDIT.filter(x => !sel.value || x.sheet === sel.value);
+        const vars = [...new Set(rows.map(x => x.sheet + "|" + x.variable))];
+        const lines = vars.map(key => {
+          const [sh, v] = key.split("|");
+          const rv = rows.filter(x => x.sheet === sh && x.variable === v);
+          const flags = rv.reduce((a, x) => a + (x.routing_broken || 0) + (x.required_missing || 0) + (x.out_of_range || 0), 0);
+          const unread = rv.some(x => x.status === "not translated");
+          return { sh, v, rv, flags, unread, label: rv[0].label, rule: rv[0].rule, con: rv[0].constraint };
+        }).filter(l => !only.checked || l.flags > 0 || l.unread);
+        if (!lines.length) { h("p", { class: "ok" }, holder, "No flags and every rule read."); return; }
+        const t = tableOf(holder, ["Question", "Routing (from the form)", ...rounds.map(r => `R${r}: asked · flags`)], lines.map(l => {
+          const q = document.createElement("span"); q.innerHTML = `<b>${l.v}</b>${l.sh !== "main" ? ` <span class="pill">${l.sh}</span>` : ""}<br><span class="muted">${l.label || ""}</span>`;
+          const ru = document.createElement("span"); ru.textContent = l.rule || "always"; if (l.con) ru.appendChild(document.createTextNode(` · constraint: ${l.con}`));
+          return [q, ru, ...rounds.map(r => {
+            const x = l.rv.find(q => q.round === r);
+            if (!x) return cell("not in form", "muted");
+            if (/not translated/.test(x.status) && !/constraint/.test(x.status)) return cell("rule not read", "muted", "the translator does not know a function in this rule; check by hand");
+            const n = (x.routing_broken || 0) + (x.required_missing || 0) + (x.out_of_range || 0);
+            const sp = cell(`${fmtInt(x.base)} · ${n ? n : "–"}`, "", "");
+            sp.dataset.level = level(n);
+            sp.dataset.tip = `<b>${l.v}, round ${r}</b><br>should have been asked: ${fmtInt(x.base)}<br>answered: ${fmtInt(x.answered)}<br>answered where not asked: ${fmtInt(x.routing_broken)}<br>required but missing: ${fmtInt(x.required_missing)}<br>outside the constraint: ${x.out_of_range == null ? (x.constraint ? "constraint not read" : "no constraint") : fmtInt(x.out_of_range)}`;
+            return sp;
+          })];
+        }));
+        t.querySelectorAll("tbody td").forEach((td, i) => {
+          const sp = td.firstChild;
+          if (td.cellIndex === 0) td.classList.add("txt");
+          if (td.cellIndex === 1) td.classList.add("rule");
+          if (sp && sp.dataset && sp.dataset.level) { const lv = +sp.dataset.level; if (lv) td.classList.add("fl", "fl" + lv); hover(td, () => sp.dataset.tip); }
+        });
+      }
+      sel.addEventListener("change", draw); only.addEventListener("change", draw); draw();
+    }
+
+    // ---- form changes
+    const cf = card(sec, "What changed in the form between rounds", "Read from the forms themselves: questions added or dropped, a type or wording changed, a choice list with a different number of options. A question that leaves and comes back belongs to a rotating module.", true);
+    if (!D.form_changes || !D.form_changes.length) h("p", { class: "ok" }, cf, "No changes between the rounds' forms.");
+    else tableOf(cf, ["Rounds", "Change", "Variable", "Question"], D.form_changes.map(x => {
+      const p = document.createElement("span"); p.className = "pill " + (x.change === "added" ? "added" : x.change === "dropped" ? "dropped" : ""); p.textContent = x.change;
+      if (x.rotating) { p.textContent += " · rotating"; }
+      return [`${x.from_round} → ${x.to_round}`, p, x.variable, x.label];
+    }), { left: [3] });
+
+    // ---- processing checks
+    const cc = card(sec, "Processing checks (steps 3 to 5)", "Every check the do-files ran, from CATI/Analysis/fix/checks.csv. Checks that found something come first; the action says what the do-files did (a check marked stop would have ended the run).", true);
+    const f2 = h("div", { class: "filters" }, cc);
+    const lab2 = h("label", { class: "chk" }, f2); const all2 = h("input", { type: "checkbox" }, lab2); lab2.appendChild(document.createTextNode("show checks that found nothing"));
+    const holder2 = h("div", {}, cc);
+    function drawChecks() {
+      holder2.innerHTML = "";
+      const rows = D.checks.filter(x => !INFO.test(x.check) || all2.checked).map(x => ({ ...x, found: x.n > 0 && !INFO.test(x.check) })).filter(x => all2.checked || x.found)
+        .sort((a, b) => (b.found - a.found) || (a.round - b.round) || (a.step - b.step));
+      if (!rows.length) { h("p", { class: "ok" }, holder2, "No processing check found anything."); return; }
+      tableOf(holder2, ["Check", "Round", "Step", "Count", "Action"], rows.map(x => [x.check, x.round, x.step, cell((x.found ? "⚠ " : "") + (Number.isInteger(x.n) ? fmtInt(x.n) : x.n), x.found ? "flag" : ""), x.action]), { left: [4] });
+    }
+    all2.addEventListener("change", drawChecks); drawChecks();
+
+    // ---- review lists
+    const cr = card(sec, "Review lists", "Rows a rule cannot judge, written to the round's fix folder (CATI/Round##/fix/&lt;date&gt;) for a person to read before the round is closed. They hold household IDs, so they stay with the team.", true);
+    if (!D.reviews || !D.reviews.length) h("p", { class: "ok" }, cr, "No review lists this run.");
+    else tableOf(cr, ["File", "Rows"], D.reviews.map(x => [x.file, fmtInt(x.rows)]));
+    const ch = card(sec, "What to do with a flag", null, true);
+    const ul = h("ul", { class: "plain" }, ch);
+    ["Read it against the routing first: a question can be empty because the respondent was rightly routed past it, and a rotating module is absent by design.",
+     "Give it a likely cause and an owner. A routing condition missing from the form goes to the questionnaire team; an answer that breaks a correct condition goes to the field team; a variable the condition needs but the data lack goes to the processing team.",
+     "Fix it in the round where it started: a correction in the do-files with its reason, a callback from the review list, or a change to the form before the next round.",
+     "The households behind the flags are listed by ID, with the submission, the question and the answer as recorded, in CATI/Round##/fix/&lt;date&gt;/R##_form_flags.csv. That file stays with the team; this page shows counts only."].forEach(t => h("li", {}, ul, t));
+  })();
+
+  // ======================================================== Sample and weights
+  (function () {
+    const sec = document.getElementById("sec-sample");
+    if (D.sample) {
+      const cs = card(sec, "Sample", "Baseline (face to face): PSUs drawn with probability proportional to census households in each stratum, 15 households in each. Phone panel: in each PSU, households with a phone ranked by a random key drawn at baseline; the first 6 (urban) or 7 (rural) are the main sample, the rest are replacements in order.", true);
+      tableOf(cs, ["Stratum", "PSUs in frame", "Census households", "PSUs drawn", "Baseline households", "with a phone", "Phone main sample", "Replacements", "Mean baseline weight"],
+        D.sample.map(x => [`Region ${x.region}, ${x.locale === 1 ? "urban" : "rural"}`, fmtInt(x.frame_psus), fmtInt(x.census_households), x.psus, fmtInt(x.baseline), fmtInt(x.phone), fmtInt(x.main), fmtInt(x.repl), fmtInt(x.w_bl)]));
+    }
+    if (D.weights) {
+      const cw = card(sec, "Round weights", "Each person present in an interviewed household starts from the household's phone-sample weight (a replacement comes from the same PSU list, so it starts from the same weight). The person weights are then post-stratified in cells of stratum × age group × sex to the baseline population, as L2PHL does; the household weight is the mean of its members' person weights, so its sum is close to, not exactly, the census household count. Raking and entropy balancing to the same margins are the alternatives (global WEIGHTS). Design effect from unequal weights = 1 + CV².", true);
+      tableOf(cw, ["Round", "Method", "Households weighted", "Persons weighted", "of which households from the replacement list", "Sum of household weights", "Smallest", "Largest", "Design effect", "Cells", "Cells under 10 persons"],
+        D.weights.map(x => [x.round, x.method, fmtInt(x.households), fmtInt(x.persons), fmtInt(x.replacements), fmtInt(x.hhw_sum), fmtInt(x.hhw_min), fmtInt(x.hhw_max), num(x.deff, 2), x.cells == null ? "" : x.cells, x.cells_small == null ? "" : x.cells_small]), { left: [1] });
+    }
+  })();
+
+  // ---------- tabs: a count on the Quality tab; the chosen tab is remembered in this browser when storage is allowed
+  const tabs = [...document.querySelectorAll("nav button")];
+  const atl = auditTotals(lastRound), nq = atl.routing + atl.required + atl.range + checksFound(lastRound);
+  if (nq) h("span", { class: "n" }, tabs.find(b => b.dataset.tab === "quality"), fmtInt(nq));
+  function select(name) {
+    tabs.forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+    document.querySelectorAll("main > section").forEach(sct => { sct.hidden = sct.id !== "sec-" + name; });
+    try { localStorage.setItem("rtm_tab", name); } catch (e) { /* storage blocked */ }
+  }
+  tabs.forEach(b => b.addEventListener("click", () => select(b.dataset.tab)));
+  let start = "overview";
+  try { start = localStorage.getItem("rtm_tab") || start; } catch (e) { /* storage blocked */ }
+  if (location.hash.length > 1) start = location.hash.slice(1);
+  select(tabs.some(b => b.dataset.tab === start) ? start : "overview");
+})();
+</script>
+</body>
+</html>

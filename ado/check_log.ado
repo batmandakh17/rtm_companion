@@ -1,5 +1,6 @@
-*! check_log: one line in output/analysis/fix/checks.csv for every data check
+*! check_log: one line in CATI/Analysis/fix/checks.csv for every data check
 *! check_log round step "what was checked" n_flagged "what was done"   (action "stop" with n > 0 ends the run)
+*! round is a number, or "all" for a check across rounds (written as missing)
 program define check_log
 	args round step what n action
 	tempname fh

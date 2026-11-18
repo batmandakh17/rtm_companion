@@ -1,6 +1,6 @@
 # Module files
 
-The round do-file (`do/3_L2PHL_SYN_CATI@R.do`) writes one set of files per round to `output/R##/dta/`, named `l2phl_syn_R##_<module>.dta` as in L2PHL. Every file carries `hhid` and `round`. Labels come from the round's form.
+The round do-file (`CATI/do/L2PHL_SYN_CATI@R.do`) writes one set of files per round to `CATI/Round##/dta/<date of the export>/`, named `l2phl_syn_<date>_<module>.dta` as in L2PHL. The analysis copies the latest set of every round into `CATI/Analysis/HF/R##` and appends them there. Every file carries `hhid` and `round`. Labels come from the round's form.
 
 | File | One row per | Built from | Contents |
 |---|---|---|---|
@@ -16,9 +16,9 @@ The round do-file (`do/3_L2PHL_SYN_CATI@R.do`) writes one set of files per round
 ## Kept apart
 
 These files hold identifying information. They exist so the team can call back or fix a record, and never leave the team:
-- `output/R##/pii/R##_contacts.dta`: respondent name and phone numbers.
-- `output/R##/pii/R##_names.dta`: member names.
-- `output/R##/pii/preload_R(next).csv`: the next round's preload.
+- `CATI/Round##/pii/<date>/R##_contacts.dta`: respondent name and phone numbers.
+- `CATI/Round##/pii/<date>/R##_names.dta`: member names.
+- `CATI/Round##/pii/<date>/preload_R(next).csv`: the next round's preload.
 
 ## Rules step 3 applies
 

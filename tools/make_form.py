@@ -1,4 +1,4 @@
-"""Builds the example phone-round questionnaire (XLSForm) for rounds 1-3: data/form/L2PHL_SYN_CATI_R0#.xlsx.
+"""Builds the example phone-round questionnaire (XLSForm) for rounds 1-3: CATI/KOBO/L2PHL_SYN_CATI_R0#.xlsx.
 
 The form is a shortened version of the L2PHL round-10 phone questionnaire: the same variable names, choice lists and
 codes for the questions kept, one submission per call attempt, preloaded household data read with pulldata(). Modules:
@@ -14,7 +14,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "data", "form")
+OUT = os.path.join(ROOT, "CATI", "KOBO")
 ROUNDS = {1: ["finance"], 2: ["health"], 3: ["finance"]}       # rotating modules by round
 MAXMEM = 15                                                    # preload columns name1..name15
 

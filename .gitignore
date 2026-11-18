@@ -1,4 +1,20 @@
-output/
+# Everything the run writes: the dated subfolders inside the stage folders, as in the L2 programs.
+# They hold household IDs, names and numbers once real data go through, so they never go into version control.
+CAPI/dta/
+CAPI/pii/
+CAPI/fix/
+CATI/Round*/zzz/
+CATI/Round*/dta/
+CATI/Round*/call/
+CATI/Round*/fix/
+CATI/Round*/aud/
+CATI/Round*/wgt/
+CATI/Round*/pii/
+CATI/Analysis/HF/
+CATI/Analysis/2share/
+CATI/Analysis/call/
+CATI/Analysis/fix/
+CATI/Analysis/summary_dashboard/
 *.log
 *.smcl
 tools/__pycache__/

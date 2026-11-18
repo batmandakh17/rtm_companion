@@ -1,17 +1,15 @@
-"""Writes each round's questionnaire as a Word document and a PDF from its XLSForm, and lays out the KoBo form as
-uploaded (form plus media files) in questionnaire/kobo/R##.
+"""Writes each round's questionnaire as a Word document and a PDF from its XLSForm (CATI/KOBO), into CATI/Questionnaire.
 
 The documents follow the layout the L2 programs use for their phone-round questionnaires: a title block with the round
 and its dates, a colour legend, one shaded heading per module, and a three-column table in which each question has its
 variable name with the condition under which it is asked (grey italics), the question text, and the coded answer options
 with dot leaders. Questions new in this round are blue; questions asked in the previous round and paused in this one are
-green. Everything comes from the form itself (data/form/L2PHL_SYN_CATI_R##.xlsx), so the document and the deployed form
+green. Everything comes from the form itself (CATI/KOBO/L2PHL_SYN_CATI_R##.xlsx), so the document and the deployed form
 cannot drift apart.
 
-Outputs (questionnaire/):
+Outputs (CATI/Questionnaire/):
   L2PHL_SYN_CATI_R##@<round start>.docx   the Word questionnaire (python-docx)
   L2PHL_SYN_CATI_R##@<round start>.pdf    the same page, printed from an HTML twin with headless Chrome
-  kobo/R##/                                the XLSForm and its media files (households.csv, preload.csv), as uploaded
 
 usage: python3 tools/make_questionnaire.py            (needs python-docx and openpyxl; Chrome for the PDF)
 """
@@ -36,9 +34,8 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 from make_synthetic import ROUND_START, call_days  # noqa: E402  (the round calendar, so the dates match the data)
 
 PROGRAM = "L2PHL_SYN"
-OUT = os.path.join(ROOT, "questionnaire")
-FORM = os.path.join(ROOT, "data", "form", PROGRAM + "_CATI_R{rr}.xlsx")
-MEDIA = os.path.join(ROOT, "data", "raw", "R{rr}", "media")
+OUT = os.path.join(ROOT, "CATI", "Questionnaire")
+FORM = os.path.join(ROOT, "CATI", "KOBO", PROGRAM + "_CATI_R{rr}.xlsx")
 LABEL = "label::English (en)"
 
 # module headings by group name, and the module file each group feeds (docs/module_files.md)
@@ -248,8 +245,8 @@ def title_lines(r, settings):
 INTRO = ("This questionnaire belongs to the RTM companion package. It is a shortened version of the L2PHL phone "
          "questionnaire, keeping its variable names, choice lists and codes, and it is the questionnaire the package's "
          "synthetic data were generated from. One submission is one call attempt: the call record is filled on every "
-         "attempt, and the modules only after consent (Z9 = 1). The KoBoToolbox form is the XLSForm in "
-         "questionnaire/kobo/R{rr}, with the two files it reads: households.csv (the list behind the household "
+         "attempt, and the modules only after consent (Z9 = 1). The KoBoToolbox form is the XLSForm in CATI/KOBO, "
+         "and the two files it reads are in CATI/Round{rr}/kobo: households.csv (the list behind the household "
          "question) and preload.csv (the previous round's roster and contacts, read with pulldata). Every name, number "
          "and place in the data is made up.")
 
@@ -614,16 +611,10 @@ def main():
             html_path = os.path.join(tmp, stem + ".html")
             write_html(r, shown, settings, html_path)
             print_pdf(html_path, os.path.join(OUT, stem + ".pdf"))
-        # the form as uploaded, with its media files
-        kobo = os.path.join(OUT, "kobo", f"R{rr}")
-        os.makedirs(kobo, exist_ok=True)
-        shutil.copy2(FORM.format(rr=rr), kobo)
-        for f in ("households.csv", "preload.csv"):
-            shutil.copy2(os.path.join(MEDIA.format(rr=rr), f), kobo)
         nq = sum(1 for b in blocks if b["kind"] == "q")
         new = sum(1 for b in shown if b["kind"] == "q" and b.get("colour") == BLUE)
         paused = sum(1 for b in shown if b["kind"] == "q" and b.get("colour") == GREEN)
-        print(f"R{rr}: {nq} questions, {new} new, {paused} paused -> {stem}.docx / .pdf, kobo/R{rr}/")
+        print(f"R{rr}: {nq} questions, {new} new, {paused} paused -> {stem}.docx / .pdf")
         prev = blocks
 
 

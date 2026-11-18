@@ -1,9 +1,11 @@
-"""Makes every input file in data/ from a seed: a synthetic country (frame and census totals), a baseline face-to-face
-survey, and three monthly phone rounds as KoBoToolbox exports, one submission per call attempt, in the layout of the
-L2PHL phone rounds. The same dials are also written as a call-centre system log, so step 4 can show that two sources
+"""Makes every input file of the package from a seed: a synthetic country (frame and census totals, CAPI/ado), a
+baseline face-to-face survey (CAPI/raw), and three monthly phone rounds as KoBoToolbox exports (CATI/Round##/xls),
+one submission per call attempt, in the layout of the L2PHL phone rounds, with the media files the forms read
+(CATI/Round##/kobo). The same dials are also written as a call-centre system log, so step 4 can show that two sources
 give one standard call file. Nothing here comes from a real survey: names, numbers, places and answers are made up.
 
-You do not need this script to run the workflow; data/ already holds its output. Rerun it only to change the example.
+You do not need this script to run the workflow; the package already holds its output. Rerun it only to change the
+example.
 
 usage: python3 tools/make_synthetic.py            (needs openpyxl; run make_form.py first)
 """
@@ -21,7 +23,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from make_form import CHOICES  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.path.join(ROOT, "data")
+CAPI = os.path.join(ROOT, "CAPI")                   # the baseline: ado (frame, census), raw (the interviews)
+CATI = os.path.join(ROOT, "CATI")                   # the phone rounds: KOBO (forms), ado, Round## (xls, kobo)
 SEED = 20261114
 TZ = dt.timezone(dt.timedelta(hours=8))
 PROGRAM = "L2PHL_SYN"
@@ -411,7 +414,7 @@ def employment_answers(rng, row, p, old, job_shock):
 def form_layout(r):
     """Columns of the export by sheet, from the round's form: questions and calculates in form order (notes and groups
     are not exported), each select_multiple followed by one 0/1 column per option."""
-    wb = openpyxl.load_workbook(os.path.join(DATA, "form", f"L2PHL_SYN_CATI_R{r:02d}.xlsx"), read_only=True)
+    wb = openpyxl.load_workbook(os.path.join(CATI, "KOBO", f"L2PHL_SYN_CATI_R{r:02d}.xlsx"), read_only=True)
     rows = list(wb["survey"].iter_rows(values_only=True))[1:]
     choices = {}
     for ln, name, _ in list(wb["choices"].iter_rows(values_only=True))[1:]:
@@ -521,24 +524,24 @@ def main():
         h.setdefault("sample", 0)
         h["round_lastint"] = 0
 
-    write_csv(os.path.join(DATA, "frame", "frame_psu.csv"), frame, ["psu", "region", "locale", "stratum", "hh_census", "pop_census"])
+    write_csv(os.path.join(CAPI, "ado", "frame_psu.csv"), frame, ["psu", "region", "locale", "stratum", "hh_census", "pop_census"])
     tot = {}
     for f in frame:
         t = tot.setdefault(f["stratum"], {"stratum": f["stratum"], "region": f["region"], "locale": f["locale"], "households": 0, "persons": 0})
         t["households"] += f["hh_census"]
         t["persons"] += f["pop_census"]
-    write_csv(os.path.join(DATA, "frame", "census_totals.csv"), sorted(tot.values(), key=lambda x: x["stratum"]),
+    write_csv(os.path.join(CAPI, "ado", "census_totals.csv"), sorted(tot.values(), key=lambda x: x["stratum"]),
               ["stratum", "region", "locale", "households", "persons"])
-    write_csv(os.path.join(DATA, "baseline", "baseline_households.csv"), hhs,
+    write_csv(os.path.join(CAPI, "raw", "baseline_households.csv"), hhs,
               ["hhid", "psu", "region", "locale", "stratum", "interview_date", "hhsize", "has_phone", "cp", "respo_fmid", "name", "u"])
-    write_csv(os.path.join(DATA, "baseline", "baseline_members.csv"), members, ["hhid", "fmid", "name", "sex", "age", "relationship", "worked_last_week"])
+    write_csv(os.path.join(CAPI, "raw", "baseline_members.csv"), members, ["hhid", "fmid", "name", "sex", "age", "relationship", "worked_last_week"])
 
     # enumerators: PSUs dealt out in turn, so each enumerator has PSUs in every region
     psus = sorted(by_psu)
     enum_of_psu = {p: 101 + (i % N_ENUM) for i, p in enumerate(psus)}
     speed = {101 + i: random.Random(SEED + 50 + i).uniform(0.8, 1.2) for i in range(N_ENUM)}
     enums = [{"int_id": 100 + i, "enumerator": f"E{i:02d}", "callcenter_operator": f"CATI{i:02d}"} for i in range(1, N_ENUM + 1)]
-    write_csv(os.path.join(DATA, "lookups", "enumerators.csv"), enums, ["int_id", "enumerator", "callcenter_operator"])
+    write_csv(os.path.join(CATI, "ado", "enumerators.csv"), enums, ["int_id", "enumerator", "callcenter_operator"])
 
     expected, panel = [], []
     for r in (1, 2, 3):
@@ -550,7 +553,7 @@ def main():
         else:
             queue = [H[x] for x in panel]
         # the preload the form reads this round (pulldata media) and the household list for the hhid question
-        media = os.path.join(DATA, "raw", f"R{r:02d}", "media")
+        media = os.path.join(CATI, f"Round{r:02d}", "kobo")
         listed = queue + ([h for h in hhs if h.get("sample") == 2] if r == 1 else [])
         write_csv(os.path.join(media, "preload.csv"), preload_rows(sorted(listed, key=lambda h: h["hhid"])), PRELOAD_COLS)
         write_csv(os.path.join(media, "households.csv"), [{"name": h["hhid"], "label": str(h["hhid"])} for h in sorted(listed, key=lambda h: h["hhid"])],
@@ -615,7 +618,7 @@ def main():
             cc_rows.append({"id": n_id, "operator_id": f"CATI{e - 100:02d}", "hh_id": h["hhid"], "round": r, "dialing_phone": h["cp"],
                             "start_time": d["start"].strftime("%Y-%m-%d %H:%M:%S"), "end_time": d["end"].strftime("%Y-%m-%d %H:%M:%S"),
                             "status": CC_STATUS[d["x15"]], "comment": ""})
-        # planted problems of the kind real exports have (data/README.md lists them; step 3 finds them)
+        # planted problems of the kind real exports have (docs/synthetic_data.md lists them; step 3 finds them)
         q = random.Random(SEED + 900 + r)
         comp = [s for s in subs if s["main"]["X15"] in (1, 2)]
         n_test = 3 if r == 1 else 0
@@ -658,12 +661,12 @@ def main():
         out = sorted(subs + tests + dups, key=lambda s: s["_submission_time"])
         last = days[-1] + dt.timedelta(days=1)
         fname = f"{PROGRAM}_CATI_R{r:02d}_-_all_versions_-_False_-_{last.isoformat()}-18-00-00.xlsx"
-        counts = write_export(r, out, os.path.join(DATA, "raw", f"R{r:02d}", fname))
+        counts = write_export(r, out, os.path.join(CATI, f"Round{r:02d}", "xls", fname))
         # the same dials in a call-centre system's log (semicolon CSV); one operator code typed with a hyphen
         for c in cc_rows:
             if c["operator_id"] == "CATI07" and c["id"] % 5 == 0:
                 c["operator_id"] = "CATI-07"
-        write_csv(os.path.join(DATA, "raw", f"R{r:02d}", "callcenter", f"calllog_R{r:02d}.csv"), cc_rows,
+        write_csv(os.path.join(CATI, f"Round{r:02d}", "xls", "callcenter", f"calllog_R{r:02d}.csv"), cc_rows,
                   ["id", "operator_id", "hh_id", "round", "dialing_phone", "start_time", "end_time", "status", "comment"], delimiter=";")
         if r == 1:
             panel = sorted(set(completed))
@@ -674,7 +677,7 @@ def main():
         print(f"R{r}: {len(subs)} dials, {len(set(completed))} completes, {len(out)} submissions in the export ({fname})")
     # the preload a team would build for round 4: step 3 rebuilds it from round 3's module files and checks it against this
     queue = [H[x] for x in panel]
-    write_csv(os.path.join(DATA, "raw", "R04", "media", "preload.csv"), preload_rows(sorted(queue, key=lambda h: h["hhid"])), PRELOAD_COLS)
+    write_csv(os.path.join(CATI, "Round04", "kobo", "preload.csv"), preload_rows(sorted(queue, key=lambda h: h["hhid"])), PRELOAD_COLS)
     write_csv(os.path.join(ROOT, "tests", "expected_counts.csv"), expected, list(expected[0]))
     print(f"frame {len(frame)} PSUs; baseline {len(hhs)} households, {len(members)} members; phone sample main "
           f"{sum(1 for h in hhs if h.get('sample') == 1)}, replacements {sum(1 for h in hhs if h.get('sample') == 2)}")
