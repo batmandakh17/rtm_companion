@@ -10,7 +10,7 @@ To change the example, edit the scripts and rerun `python3 tools/make_form.py` a
 ## The example
 
 - **Country:** 4 regions, each split into urban and rural (8 strata). The frame has 1,779 PSUs with census household and person counts (`frame/frame_psu.csv`, `frame/census_totals.csv`).
-- **Baseline (face to face):** 15 PSUs per stratum, drawn by systematic PPS with recorded random starts (`do/2_sample/21_select_psu.do` repeats the draw exactly). There are 15 households per PSU, found by random walk, so there is no listing. That gives 1,800 households and 8,003 members (`baseline/`). Each household carries a random key `u`, drawn at baseline, which step 2 uses to pick the phone sample.
+- **Baseline (face to face):** 15 PSUs per stratum, drawn by systematic PPS with recorded random starts (`do/1_L2PHL_SYN_CAPI_R00_psu2wgt.do` repeats the draw exactly). There are 15 households per PSU, found by random walk, so there is no listing. That gives 1,800 households and 8,003 members (`baseline/`). Each household carries a random key `u`, drawn at baseline, which step 2 uses to pick the phone sample.
 - **Phone panel:** in each PSU, the households with a phone are ranked by `u`. The first 6 (urban) or 7 (rural) form the main sample (780 households); the rest are replacements in rank order (880). Twelve enumerators, E01 to E12, call three monthly rounds, which start on 2 March, 6 April and 4 May 2026.
   - Round 1 calls the main sample. When a main household refuses, has a dead number, or is not reached, the next replacement in its PSU is called.
   - Rounds 2 and 3 call every household interviewed in round 1.
@@ -29,7 +29,7 @@ The sheets are colour-coded as the L2 forms are: groups, repeats and calculated 
 
 ## Problems planted on purpose
 
-Step 3 should find each of these (the last three through the skip-logic audit, which reads the rules from the form), and `tests/run_tests.do` checks that it does:
+The round do-file should find each of these (the last three through the skip-logic audit, which reads the rules from the form), and `tests/run_tests.do` checks that it does:
 
 | Problem | Round 1 | Round 2 | Round 3 |
 |---|---|---|---|

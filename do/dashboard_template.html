@@ -139,7 +139,7 @@ ul.plain { margin: 4px 0 0; padding-left: 18px; }
   const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)"];
   const rounds = D.meta.rounds.map(r => r.round);
   const lastRound = rounds[rounds.length - 1];
-  const INFO = /rows read|largest weight|design effect/;   // checks that report a value rather than find problems
+  const INFO = /rows read|largest \/ smallest|largest weight|design effect|share of census|raking passes|largest gap/;   // checks that report a value rather than find problems
   const roundColor = r => SERIES[(rounds.indexOf(r)) % SERIES.length];
   const pct = (x, d = 0) => x == null ? "<10" : (100 * x).toFixed(d) + "%";
   const num = (x, d = 1) => x == null ? "<10" : Number(x).toFixed(d);
@@ -562,7 +562,7 @@ ul.plain { margin: 4px 0 0; padding-left: 18px; }
     }), { left: [3] });
 
     // ---- processing checks
-    const cc = card(sec, "Processing checks (steps 3 to 5)", "Every check the do-files ran, from output/checks/checks.csv. Checks that found something come first; the action says what the do-files did (a check marked stop would have ended the run).", true);
+    const cc = card(sec, "Processing checks (steps 3 to 5)", "Every check the do-files ran, from output/analysis/fix/checks.csv. Checks that found something come first; the action says what the do-files did (a check marked stop would have ended the run).", true);
     const f2 = h("div", { class: "filters" }, cc);
     const lab2 = h("label", { class: "chk" }, f2); const all2 = h("input", { type: "checkbox" }, lab2); lab2.appendChild(document.createTextNode("show checks that found nothing"));
     const holder2 = h("div", {}, cc);
@@ -576,7 +576,7 @@ ul.plain { margin: 4px 0 0; padding-left: 18px; }
     all2.addEventListener("change", drawChecks); drawChecks();
 
     // ---- review lists
-    const cr = card(sec, "Review lists", "Rows a rule cannot judge, written to output/checks/review for a person to read before the round is closed. They hold household IDs, so they stay with the team.", true);
+    const cr = card(sec, "Review lists", "Rows a rule cannot judge, written to the round's fix folder (output/R##/fix) for a person to read before the round is closed. They hold household IDs, so they stay with the team.", true);
     if (!D.reviews || !D.reviews.length) h("p", { class: "ok" }, cr, "No review lists this run.");
     else tableOf(cr, ["File", "Rows"], D.reviews.map(x => [x.file, fmtInt(x.rows)]));
     const ch = card(sec, "What to do with a flag", null, true);
@@ -584,7 +584,7 @@ ul.plain { margin: 4px 0 0; padding-left: 18px; }
     ["Read it against the routing first: a question can be empty because the respondent was rightly routed past it, and a rotating module is absent by design.",
      "Give it a likely cause and an owner. A routing condition missing from the form goes to the questionnaire team; an answer that breaks a correct condition goes to the field team; a variable the condition needs but the data lack goes to the processing team.",
      "Fix it in the round where it started: a correction in the do-files with its reason, a callback from the review list, or a change to the form before the next round.",
-     "The households behind the flags are listed by ID, with the submission, the question and the answer as recorded, in output/checks/review/R##_form_flags.csv. That file stays with the team; this page shows counts only."].forEach(t => h("li", {}, ul, t));
+     "The households behind the flags are listed by ID, with the submission, the question and the answer as recorded, in output/R##/fix/R##_form_flags.csv. That file stays with the team; this page shows counts only."].forEach(t => h("li", {}, ul, t));
   })();
 
   // ======================================================== Sample and weights
@@ -596,9 +596,9 @@ ul.plain { margin: 4px 0 0; padding-left: 18px; }
         D.sample.map(x => [`Region ${x.region}, ${x.locale === 1 ? "urban" : "rural"}`, fmtInt(x.frame_psus), fmtInt(x.census_households), x.psus, fmtInt(x.baseline), fmtInt(x.phone), fmtInt(x.main), fmtInt(x.repl), fmtInt(x.w_bl)]));
     }
     if (D.weights) {
-      const cw = card(sec, "Round weights", "Each household interviewed starts from its phone-sample weight (a replacement takes the weight of the household it replaced); the weights are then raked to census households by stratum and baseline households by size. Design effect from unequal weights = 1 + CV².", true);
-      tableOf(cw, ["Round", "Households weighted", "of which from the replacement list", "Sum of weights", "Smallest weight", "Largest weight", "Design effect", "Raking passes"],
-        D.weights.map(x => [x.round, fmtInt(x.households), fmtInt(x.replacements), fmtInt(x.weight_sum), fmtInt(x.w_min), fmtInt(x.w_max), num(x.deff, 2), x.passes]));
+      const cw = card(sec, "Round weights", "Each person present in an interviewed household starts from the household's phone-sample weight (a replacement comes from the same PSU list, so it starts from the same weight). The person weights are then post-stratified in cells of stratum × age group × sex to the baseline population, as L2PHL does; the household weight is the mean of its members' person weights, so its sum is close to, not exactly, the census household count. Raking and entropy balancing to the same margins are the alternatives (global WEIGHTS). Design effect from unequal weights = 1 + CV².", true);
+      tableOf(cw, ["Round", "Method", "Households weighted", "Persons weighted", "of which households from the replacement list", "Sum of household weights", "Smallest", "Largest", "Design effect", "Cells", "Cells under 10 persons"],
+        D.weights.map(x => [x.round, x.method, fmtInt(x.households), fmtInt(x.persons), fmtInt(x.replacements), fmtInt(x.hhw_sum), fmtInt(x.hhw_min), fmtInt(x.hhw_max), num(x.deff, 2), x.cells == null ? "" : x.cells, x.cells_small == null ? "" : x.cells_small]), { left: [1] });
     }
   })();
 

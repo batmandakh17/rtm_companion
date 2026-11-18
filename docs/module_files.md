@@ -1,6 +1,6 @@
 # Module files
 
-Step 3 writes one set of files per round to `output/modules/R##/`, named `l2phl_syn_R##_<module>.dta` as in L2PHL. Every file carries `hhid` and `round`. Labels come from the round's form.
+The round do-file (`do/3_L2PHL_SYN_CATI@R.do`) writes one set of files per round to `output/R##/dta/`, named `l2phl_syn_R##_<module>.dta` as in L2PHL. Every file carries `hhid` and `round`. Labels come from the round's form.
 
 | File | One row per | Built from | Contents |
 |---|---|---|---|
@@ -16,9 +16,9 @@ Step 3 writes one set of files per round to `output/modules/R##/`, named `l2phl_
 ## Kept apart
 
 These files hold identifying information. They exist so the team can call back or fix a record, and never leave the team:
-- `output/pii/R##_contacts.dta`: respondent name and phone numbers.
-- `output/pii/R##_names.dta`: member names.
-- `output/pii/preload_R##.csv`: the next preload.
+- `output/R##/pii/R##_contacts.dta`: respondent name and phone numbers.
+- `output/R##/pii/R##_names.dta`: member names.
+- `output/R##/pii/preload_R(next).csv`: the next round's preload.
 
 ## Rules step 3 applies
 

@@ -25,7 +25,7 @@ The XLSForm's sheets are colour-coded (see its `legend` sheet): the L2PHL fills 
 
 1. In KoBoToolbox, create a project by uploading the XLSForm.
 2. Add `households.csv` and `preload.csv` as form media (Settings, Media), then deploy.
-3. Each new round: upload the next round's XLSForm as a new project (the L2PHL practice: one project per round), with the household list and the preload that step 36 of the workflow builds from the previous round's data.
+3. Each new round: upload the next round's XLSForm as a new project (the L2PHL practice: one project per round), with the household list and the preload that the round do-file's PRELOAD section builds from the previous round's data.
 
 ## Rebuilding the documents
 
