@@ -1,0 +1,4 @@
+round,submissions,dials,test_submissions,duplicate_submissions,negative_durations,short_completes,routing_broken,required_missing,out_of_range,households_called,completes,replacements_called,roster_rows,file
+1,2017,2010,3,4,2,3,3,4,3,920,764,140,3370,L2PHL_SYN_CATI_R01_-_all_versions_-_False_-_2026-03-22-18-00-00.xlsx
+2,1649,1645,0,4,2,3,3,4,3,764,651,108,2881,L2PHL_SYN_CATI_R02_-_all_versions_-_False_-_2026-04-26-18-00-00.xlsx
+3,1676,1672,0,4,2,3,3,4,3,764,664,108,2972,L2PHL_SYN_CATI_R03_-_all_versions_-_False_-_2026-05-24-18-00-00.xlsx

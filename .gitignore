@@ -1,0 +1,6 @@
+output/
+*.log
+*.smcl
+tools/__pycache__/
+.DS_Store
+tests/results.txt
